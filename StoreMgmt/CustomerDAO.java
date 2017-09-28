@@ -15,30 +15,33 @@ import util.Connections;
 public class CustomerDAO {
 	
 	public static boolean CusExist(String ID){
-		Connection conn = null;
+		// This Function Returns if a customer exists in a database, Used for Error Handling in later functions.
+		Connection conn = null; // Defines a Variable for Connecting
 		try {
-			conn = Connections.Connect();
-			String sql="select * from customer where customerID=?";
-			PreparedStatement pst=conn.prepareStatement(sql);
-			pst.setString(1, ID);
+			conn = Connections.Connect(); // Connects to Database, Calls the Util Package and Connections.
+			String sql="select customerid from customer where customerID=?"; // Prepared Statement, ? represents replacement value.
+			PreparedStatement pst=conn.prepareStatement(sql); // Passes above into variables
+			pst.setString(1, ID); // replaces ? with Variable 'ID'
 			
-			int count=pst.executeUpdate();
+			int count=pst.executeUpdate(); // Executes Command, then counts the output
 			
 
-			if (count==1){
+			if (count>=1){ // If Greater than 1 then customer exists, returns True to Function
 				return true;
 			}
-			else{
+			else{ // If Not greater than 1, and 'No Rows are shown' then retuns false
 				return false;
 			}
 			
-		} catch (SQLException e1) {
-			e1.printStackTrace();
-			return false;
+		} catch (SQLException e1) { // This Catches any SQL Exceptions that Might occur.
+			//e1.printStackTrace();
+			System.out.println("SQL Error"); // Shows an easy error message.
+			return false; // Returns false to the Function.
 		}
 	}
 	
 	public static boolean CusExist(String fname,String lname){
+		// Function the same as above but overrides when passed two strings.
 		Connection conn = null;
 		try {
 			conn = Connections.Connect();
@@ -71,6 +74,7 @@ public class CustomerDAO {
 			conn = Connections.Connect();
 			String sql = "insert into customer values(?,?,?,?,?,?)";
 			PreparedStatement pst=conn.prepareStatement(sql);
+			// Insert Statements
 			pst.setString(1,e.getCusID());
 			pst.setString(2,e.getfName());
 			pst.setString(3,e.getlName());
@@ -80,24 +84,22 @@ public class CustomerDAO {
 
 			int count=pst.executeUpdate();
 			
-			if (count==1){
-				System.out.println("\nCustomer " + e.getfName() + " " + e.getlName() + " Successfully Inserted");
+			if (count==1){ // Statement to check if it was inserted
+				System.out.println("\nCustomer " + e.getfName() + " " + e.getlName() + " Successfully Inserted"); // Display confirmation
 				return true;
 			}
 			else{
-				System.out.println("\nCustomer Insert Error");
+				System.out.println("\nCustomer Insert Error"); // Outputs error if failure
 				return false;
 			}
 		} catch (SQLException e1) {
 			if(CusExist(e.getCusID())==true){
 				System.out.println("\nCustomer Insert Error;\n Entry Already Exists at ID: " + e.getCusID());
-			}
-			// TODO Auto-generated catch block
+			} // Exception to catch if Customer Already exists at that ID.
 			//e1.printStackTrace();
 			return false;
 		}
 	}
-	
 	
 	public static boolean deleteCustomer(String CusID){
 		Connection conn = null;
@@ -112,6 +114,7 @@ public class CustomerDAO {
 			int count=pst.executeUpdate();
 			
 			if (count==1){
+				conn.commit();
 				System.out.println("Customer Successfully Removed");
 				return true;
 			}
@@ -126,9 +129,32 @@ public class CustomerDAO {
 			if(CusExist(CusID)==false){
 				System.out.println("No Entry In Databse of ID:  " + CusID );
 			}
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 			return false;
+		}
+	}
+	
+	public static Integer NextID(){
+		Connection conn = null;
+		try{
+			conn = Connections.Connect();
+			// This SQL Command casts the VARCHAR CustomerID as INT, then looks for the highest value
+			String sql="select max(cast(customerid as Int)) as highID from customer";
+			PreparedStatement pst=conn.prepareStatement(sql);
+			
+			ResultSet rs=pst.executeQuery();
+			
+			while(rs.next()){
+				// Returns the Highest Value, +1, so the Next ID in the Sequence is returned.
+				return rs.getInt("highid") + 1;
+			}
+			
+			return 0;
+			
+		}catch (SQLException e1) {
+			System.out.println("Error In Getting Next ID in Customer Table");
+			//e1.printStackTrace();
+			return 0;
 		}
 	}
 	
@@ -137,7 +163,7 @@ public class CustomerDAO {
 		Connection conn = null;
 		try {
 				conn = Connections.Connect();
-				String sql="select * from customer where customerID=?";
+				String sql="select * from customer where customerid=?";
 				PreparedStatement pst=conn.prepareStatement(sql);
 				pst.setString(1, CusID);
 			
@@ -166,7 +192,6 @@ public class CustomerDAO {
 				
 				
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				return null;
 			}
@@ -208,7 +233,6 @@ public class CustomerDAO {
 				}
 				
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				return null;
 			}
@@ -239,7 +263,6 @@ public class CustomerDAO {
 			e1.printStackTrace();
 		}
 	}
-
 
 	public static void updateCustomerLastName(String cid, String lname) throws SQLException {
 		Connection con =  null;
@@ -277,7 +300,7 @@ public class CustomerDAO {
 			}
 		}
 	
-public static void updateCustomerEmail(String cid, String email) throws SQLException {
+	public static void updateCustomerEmail(String cid, String email) throws SQLException {
 		Connection con = null;
 		PreparedStatement pst = null;
 		String updateEmailSQL = "UPDATE customer SET EMAIL = ? " +
@@ -325,21 +348,30 @@ public static void updateCustomerEmail(String cid, String email) throws SQLExcep
 			String in = scanner.nextLine();
 			if( in.equals("1"))
 			{
+				
+				String IDnum = NextID().toString();
+				
+				System.out.println("Using Next Available Unique ID of " + IDnum);
 
-				System.out.println("Please Insert Unique ID: ");
-				String CID = scanner.nextLine();
+				//System.out.println("Please Insert Unique ID: ");
+				String CID = IDnum;
 				System.out.println("Please Insert First Name: ");
 				String Fname = scanner.nextLine();
+				Fname.trim();
 				System.out.println("Please Insert Last Name: ");
 				String Lname = scanner.nextLine();
+				Lname.trim();
 				System.out.println("Please Insert Address: ");
 				String Address = scanner.nextLine();
+				Address.trim();
 				//scanner.next();
 				System.out.println("Please Insert Email: ");
 				String Email = scanner.nextLine();
+				Email.trim();
 				//scanner.next();
 				System.out.println("Please Insert Tel No: ");
 				String TelNo = scanner.nextLine();
+				TelNo.trim();
 
 				CustomerBean TESTER = new CustomerBean(CID,Fname,Lname,Address,Email,TelNo);
 				insertCustomer(TESTER);
